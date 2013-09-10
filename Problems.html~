@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.2  (Win32)">
+	<META NAME="AUTHOR" CONTENT="Michael Brooks">
+	<META NAME="CREATED" CONTENT="20121206;16402100">
+	<META NAME="CHANGEDBY" CONTENT="Michael Brooks">
+	<META NAME="CHANGED" CONTENT="20121206;21142900">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 0.79in }
+		P { margin-bottom: 0.08in }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<P STYLE="margin-bottom: 0in">Problems</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">First off, the biggest problem we faced
+with this project was getting Necessitas running on our computers. In
+fact, that was a problem we were never able to solve, so we ended up
+doing our project using Java.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">With that, we were put on a bit of a
+time crunch. We had to decide which features were the most important,
+and which ones were going to be an &ldquo;if we get around to it&rdquo;
+type of feature. Despite the time crunch, our group was very pleased
+with the progress we made on the app, only having a feature or two
+that we didn't get around to implementing.</P>
+<P STYLE="margin-bottom: 0in"><BR>Regarding problems that exist
+within our code, we had a few problems that we were not able to get
+around to resolving. Here is a list of the ones we weren't able to
+get around to:</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<OL>
+	<LI><P STYLE="margin-bottom: 0in">Slider questions don't work. For
+	some reason when it displays the sliding bar on the phone 	screen it
+	appears very small, and there is no room to drag it around and
+	select an answer</P>
+	<LI><P STYLE="margin-bottom: 0in">Our write function works, but
+	currently only displays the questions that were visited by the user,
+		as well as the date/time. It should be a very minor implementation,
+	simply writing the 	selected answers for each question we visit, but
+	Professor Leigh had said that what 	we were presenting should be our
+	complete project.</P>
+	<LI><P STYLE="margin-bottom: 0in">Random prompts is not completely
+	implemented. We had everything set up for them to be 	implemented,
+	but because Professor Leigh said we shouldn't add more to it after
+	the 	presentation, we left it as is. We have a button which displays
+	the random prompt, and it 	should be as simple as having it grab
+	times randomly and prompting the user to take a 	survey in order to
+	get this implemented.</P>
+	<LI><P STYLE="margin-bottom: 0in">We didn't get around to the admin
+	page, which would be where we would have pulled the data 	off the
+	phone to the desktop. Currently, we are opening the file and viewing
+	it's contents 	using DDMS on Eclipse.</P>
+</OL>
+</BODY>
+</HTML>

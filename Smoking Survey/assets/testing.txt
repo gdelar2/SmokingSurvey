@@ -1,0 +1,54 @@
+<id> 0
+<button>
+	<id> 0
+	<q>How happy are yowu?
+		<a1>Very happy
+		<a2>Kinda happy
+		<a3>Meh
+		<a4>Sad
+	<locations> 1 1 2 2
+<checkbox>
+	<id> 1
+	<q>What are you doing?
+		<a1>Relaxing
+		<a2>Homework
+		<a3>Sports
+		<a6>DRUGS
+	<locations> 3 3 3 4
+<checkbox>
+	<id> 2
+	<q>Why are you sad?
+		<a1>Stressed out
+		<a2>Lack of sleep
+		<a3>No cats to play with
+		<a4>CS 340 problems
+	<locations> 5 5 5 5
+<button>
+	<id> 3
+	<q>Out of these numbers, which is your favorite?
+		<a1>1
+		<a2>2
+		<a3>3
+		<a4>4
+	<locations> 5 5 5 5
+<checkbox>
+	<id> 4
+	<q>What drugs are you doing?
+		<a1>Heroin
+		<a2>Marijuana
+		<a3>PCP
+		<a4>Alcohol
+	<locations> 5 5 5 5
+<checkbox>
+	<id> 5
+	<q>End
+		<a1>CS
+		<a2>340
+		<a3>Med
+		<a4>App
+	<locations> -1 -1 -1 -1
+<slider>
+	<id> 6
+	<q>Slide this shit
+	<locations> 1 1 1 1
+<end>	

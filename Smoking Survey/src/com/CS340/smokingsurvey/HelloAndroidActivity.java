@@ -1,0 +1,799 @@
+package com.CS340.smokingsurvey;
+
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PipedInputStream;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+ 
+
+
+import android.widget.CheckBox;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
+import android.widget.SeekBar;
+import android.widget.TextView; 
+import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.res.AssetManager;
+import android.os.Bundle;
+import android.os.Environment;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+
+public class HelloAndroidActivity extends Activity implements OnClickListener {
+    /** Called when the activity is first created. */
+    RelativeLayout newLayout;
+
+	InputStream is = null;													//input stream for reading in file
+	InputStream myWrite = null;												//writing file
+	BufferedReader r = null;												//grabbing data from is
+	
+	ArrayList<Question> questions=new ArrayList<Question>();				//All the questions
+	ArrayList<Question> questionsToDisplay = new ArrayList<Question>();		//Question queue
+	ArrayList<Question> questionsWeHaveSeen = new ArrayList<Question>();	//Question stack
+	ArrayList<Integer> numOfAnswers = new ArrayList<Integer>();				//List of answers
+	String userID = "";														//Stores ID of current user
+
+	LinkedList myList = new LinkedList();									//Linked list, (we ended up changing our
+																			//design, but it is still used during the
+																			//parsing so we left it)
+	Button next, previous;													//Next and previous buttons
+	RadioGroup answer1;														//Radio group for our dynamically generated UI
+	RadioButton[] radioAnswer;												//List of radio button answers
+	CheckBox[] boxAnswer;													//List of check box answers
+	int currentlyViewedQuestion = 0;										//Used to keep track of current question, which
+																			//helps us with our non-linear questions
+	NotificationManager nm;													//Used for notifications
+	//static int NID = 696969;
+	
+	
+	
+	
+	
+	
+	/* On create
+	 * Code to be executed when the application begins
+	 * Auto generated, methods called inside are created by MICHAEL BROOKS and GUS DE LA ROSA
+	 */
+	@Override
+    public void onCreate(Bundle savedInstanceState) {
+    	newLayout=new RelativeLayout(this);				//create new layout for dynamic UI
+    	answer1=new RadioGroup(this);					//Create a new radio grouping (also for dynamic UI)
+    	newLayout.setId(200);							//Assign the layout an ID so we can reference it later
+		super.onCreate(savedInstanceState);
+
+		
+		//next Button Setup, includes text, on Click Listener, ID
+	    next=new Button(this);
+	    next.setOnClickListener(this);
+	    next.setId(101);	        
+	    next.setText("Next");
+	    
+	    //Add next button to our layout
+	    newLayout.addView(next,prepareLayout());
+	    //previous button setup, includes text, on click listener, ID
+	    previous=new Button(this);
+	    previous.setOnClickListener(this);
+	    previous.setId(102);	        
+	    previous.setText("Previous");
+	    
+	    //Set rules for the previous button, and add it to the layout with the rules specified
+	    RelativeLayout.LayoutParams previousParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+	    previousParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+	    previousParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+	    newLayout.addView(previous,previousParams);
+	      
+		openFile();		//Open the input file
+		readFile();		//Read the input file
+		
+		//Display the start page for the user
+		displayStartPage();
+    	
+		
+	}
+	
+	
+	/* On click
+	 * Specifies how to handle individual button clicks
+	 * Created by MICHAEL BROOKS, GUS DE LA ROSA, KEVIN KATSIS
+	 */
+
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		
+		//Clear our radio group to prepare for any new answers to be displayed
+		answer1.removeAllViews();
+		//Add next to the new Layout again
+		newLayout.addView(next, prepareLayout());
+		
+		 //Add previous button to the new layout again
+        RelativeLayout.LayoutParams previousParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+        previousParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        previousParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+    	newLayout.addView(previous, previousParams);
+			
+    	
+    	 if(v.getId()==104){    //104 is start survey button / displays the first question in the survey
+         	
+    		questionsWeHaveSeen.add(questions.get(0));	//Start survey, add question zero to our list of questions seen
+         	displayQuestion(questions.get(0));			//Display question to user
+         	
+         }
+    	 
+    	 
+    	 //Calls method to create notification
+    	 if(v.getId()==555){
+    		 createNotif();    		 		
+     	 }
+    	 
+    	 	//If next button is hit..
+			if(v.getId() ==101){//101 is the id for the nextbutton
+				
+				//Check for the end of the survey
+				if(questionsToDisplay.size()<1 && questions.get(currentlyViewedQuestion).id==5){
+					displayEndSurvey();											// Display the end screen to user
+					for(int i = 0; i < questionsWeHaveSeen.size(); i++)
+					{
+						Date myDate = new Date();
+						writeFile(myDate.toString());							//Grab data we want to write
+						writeFile(questionsWeHaveSeen.get(i).question);			//and display it with the date
+					}
+				}
+				else{
+				
+				if(questionsToDisplay.size() != 0)			//If there is a question to display
+				{
+					getButtonLocation(); 					//grab button location
+					
+					//add question to questionsWeHaveSeen
+					questionsWeHaveSeen.add(questionsToDisplay.get(questionsToDisplay.size()-1));
+					
+					//Remove previous question, and display the new one
+					while(questionsToDisplay.get(questionsToDisplay.size()-1).id < 0 ){
+						questionsToDisplay.remove(questionsToDisplay.size()-1);
+					}
+					displayQuestion(questionsToDisplay.get(questionsToDisplay.size()-1));
+					
+					//Remove question just displayed
+					questionsToDisplay.remove(questionsToDisplay.size()-1);
+				}
+				
+				else{
+				getButtonLocation();	//get the button location
+				
+				//If there's more to display, display it
+					if(questionsToDisplay.size()!= 0){
+						questionsWeHaveSeen.add(questionsToDisplay.get(questionsToDisplay.size()-1));
+						displayQuestion(questionsToDisplay.get(questionsToDisplay.size()-1));
+						questionsToDisplay.remove(questionsToDisplay.size()-1);
+					}
+				
+				}
+				
+			}
+		}
+		
+		if(v.getId()==102){//102 is previous button
+			
+			if(currentlyViewedQuestion==0 && questionsToDisplay.size()<1){//this is a check. if ther user is in the first question
+				                                                          //it will go back to the start page
+				displayStartPage();
+			}else{
+			int numToRemove = 0;
+			//if(numOfAnswers.size() != 0)
+			//{
+			numToRemove = numOfAnswers.get(numOfAnswers.size()-1);
+			//}
+			//this is the undo code
+			numOfAnswers.remove(numOfAnswers.size()-1);
+			questionsWeHaveSeen.remove(questionsWeHaveSeen.size()-1);
+			currentlyViewedQuestion = questionsWeHaveSeen.get(questionsWeHaveSeen.size()-1).id;
+			
+			for(int i = 0; i < numToRemove-1; i++){
+				questionsToDisplay.remove(questionsToDisplay.size()-1);
+			}
+			displayQuestion(questionsWeHaveSeen.get(questionsWeHaveSeen.size()-1));
+			//}
+		}
+		}
+		
+	}
+    
+    /*
+        Author:Gustavo De La Rosa
+    displayEndSurvey
+     clears the layout and creates a label saying it's the end of the survey
+     this is called when the last question is on the screen and the next button is clicked
+    
+    */
+	private void displayEndSurvey() {
+		
+		
+		
+		newLayout.removeAllViews();
+		TextView endLabel= new TextView(this);
+		endLabel.setText("End of Survey. See you Next Time!!");
+		
+		newLayout.addView(endLabel);
+		
+		
+		
+	
+	}
+	/*
+	    Author:Gustavo De La Rosa
+	dispayStartPage
+	this method simply clears the current layout and creates button and labels for the start page
+	this method is displayed when the app is first started and when the prev button is clicked on the first question
+	
+	*/
+
+	private void displayStartPage() {
+		
+		
+		RelativeLayout start=new RelativeLayout(this);
+		start.removeAllViews();
+		
+		
+		Button admin=new Button(this);
+		RelativeLayout.LayoutParams adminParams=new LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+		admin.setText("Admin");
+		admin.setId(103);
+		adminParams.addRule(RelativeLayout.CENTER_IN_PARENT, RelativeLayout.ALIGN_PARENT_LEFT);
+		adminParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+		start.addView(admin, adminParams);
+		
+		Button survey=new Button(this);
+		survey.setId(104);
+		survey.setOnClickListener(this);
+		RelativeLayout.LayoutParams surveyParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,2*(RelativeLayout.LayoutParams.WRAP_CONTENT));
+		survey.setText("Start Survey");
+		//survey.setId(104);
+		//surveyParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.ALIGN_PARENT_LEFT);
+		surveyParams.addRule(RelativeLayout.ABOVE, admin.getId());
+		start.removeAllViews();
+		
+		
+		start.addView(admin, adminParams);
+		
+		start.addView(survey, surveyParams);
+		
+		
+		Button clockIn = new Button(this);
+		RelativeLayout.LayoutParams clockInParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+		clockIn.setText("Clock In");
+		clockIn.setId(555);
+		clockInParams.addRule(RelativeLayout.ABOVE, survey.getId());
+		clockInParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+		start.addView(clockIn,clockInParams);
+		clockIn.setOnClickListener(this);
+		
+		
+		setContentView(start);
+	
+		
+		
+	}
+	/*
+	    Author: Gustavo De La Rosa  
+	        displays a slider question
+	        
+	        doesnt completely work
+	*/
+	private void sliderQuestion(Question currentQuestion){
+		//Question
+		TextView label=new TextView(this);  
+        label.setText(currentQuestion.question);        
+        RelativeLayout.LayoutParams labelParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+        labelParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        labelParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        label.setId(100);           
+        newLayout.addView(label);
+        
+        SeekBar bar= new SeekBar(this);
+        bar.setMax(100);
+        bar.setProgress(50);
+        RelativeLayout.LayoutParams seekBarParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+       // seekBarParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        seekBarParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        
+        bar.setMinimumWidth(100);
+        newLayout.addView(bar, seekBarParams);
+        setContentView(newLayout);
+		
+	}
+	/* prepare layout
+	 * Sets the rules for when we want to create a next button (Gus will do the same for the previous button)
+	 * Created By MICHAEL BROOKS
+	 */
+	public RelativeLayout.LayoutParams prepareLayout(){
+		//clear the layout
+		newLayout.removeAllViews();
+		RelativeLayout.LayoutParams nextParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+		//Add rules to nextParams to have the next button abide to
+        nextParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        nextParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+        //return our rule set
+        return nextParams;
+	}
+	
+	/* 
+	    
+	    displayQuestion
+	 * Grabs current question to be viewed and displays it to user
+	 * Created by MICHAEL BROOKS and Gustavo De La Rosa
+	 */
+	private void displayQuestion(Question currentQuestion) {
+		
+		if(currentQuestion.questionType.equals("button")){	
+			radioQuestion(currentQuestion);						//if radio button, display it
+		}
+			else if(currentQuestion.questionType.equals("checkbox")){
+				checkBoxQuestion(currentQuestion);				//if checkbox, display it
+			}
+		
+			else if(currentQuestion.questionType.equals("slider")){
+				sliderQuestion(currentQuestion);				//if slider, display it
+			}
+	}
+	
+	/* getButtonLocation
+	 * Grabs the answers the user enters, and updates our currentViewedQuestion and adds the questions to be displayed
+	 * to our queue
+	 * Created by MICHAEL BROOKS
+	 */
+	public void getButtonLocation(){
+		
+		int answerCount = 0;	//total answers we have seen
+		
+		questions.get(currentlyViewedQuestion).selectedAnswers.clear();	//clear our answers arraylist in case of undo
+		
+		if(questions.get(currentlyViewedQuestion).questionType.equals("button"))	//steps for button
+			for(int i = 0; i < radioAnswer.length; i++){
+				//Check for checked boxes, if checked, add it to queue unless it is the last question of the branch
+				if(radioAnswer[i].isChecked() == true){
+		
+					//Used to update currentlyViewedQuestion
+					int goToQuestion = Integer.parseInt(questions.get(currentlyViewedQuestion).locations.get(i));
+					
+					//if not the end of the branching questions, add the answers and add it to the queue
+					if(goToQuestion >= 0){
+						questions.get(currentlyViewedQuestion).selectedAnswers.add(radioAnswer[i].getText().toString());
+						answerCount++;
+						currentlyViewedQuestion = goToQuestion;
+						questionsToDisplay.add(questions.get(goToQuestion));
+					}
+					
+				}
+			}
+			//if CheckBox
+			else if(questions.get(currentlyViewedQuestion).questionType.equals("checkbox"))
+			{
+				for(int i = 0; i < boxAnswer.length; i++){
+					
+					//boolean to prevent us from branching to the same path twice, so user doesn't have to answer
+					//same questions multiple times
+					boolean isMatch = false;
+					//Check for selected answers
+					if(boxAnswer[i].isChecked() == true){
+						//used to update currentlyViewedQuestion
+						int goToQuestion = Integer.parseInt(questions.get(currentlyViewedQuestion).locations.get(i));
+						
+						
+						//Check for same branch, if match, don't display it again
+						for(int j = 0; j < questionsToDisplay.size(); j++)
+						{
+							if(questionsToDisplay.get(j).id == goToQuestion)
+								isMatch = true;
+						}
+						
+						//If not last question and not a duplicate, store question to be displayed
+						if(goToQuestion >= 0 && !isMatch)
+						{
+							questions.get(currentlyViewedQuestion).selectedAnswers.add(radioAnswer[i].getText().toString());
+							answerCount++;
+							questionsToDisplay.add(questions.get(goToQuestion));
+						}
+						
+						//if end of branch but not last question, jump to next branch
+						else if(goToQuestion < 0 && questionsToDisplay.size() > 0){
+							currentlyViewedQuestion = questionsToDisplay.get(questionsToDisplay.size() - 1).id;
+							answerCount++;
+							questions.get(currentlyViewedQuestion).selectedAnswers.add(radioAnswer[i].getText().toString());
+						}
+						
+						//if end of branch and last question, just store answers.
+						else{
+							questions.get(currentlyViewedQuestion).selectedAnswers.add(radioAnswer[i].getText().toString());
+					}
+				}
+			}
+			
+			//update currentlyViewedQuestion to first item in stack
+			if(questionsToDisplay.size() > 0)
+				currentlyViewedQuestion = questionsToDisplay.get(questionsToDisplay.size() - 1).id;
+			else{
+				
+			}
+		}
+		//add answerCount to our numOfAnswers global
+		numOfAnswers.add(answerCount);
+	}
+
+	
+	
+	/* openFile
+	 * Using inputStream to open file for reading 
+	 * Created by MICHAEL BROOKS
+	 */
+	 
+	public InputStream openFile(){
+		//AM to help get assets to open file
+		AssetManager am = getResources().getAssets();
+	        
+		
+			//Try to open file, use buffered reader to read it later on. If file fails to open, throw exception
+	        try {
+	        	is = am.open("testing.txt");
+	        	r = new BufferedReader(new InputStreamReader(is));
+	        	return is;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return null;
+	}
+	
+	/* readFile
+	 * Reads through file, parsing it and storing things in the appropriate places, including questions, answers,
+	 * user ID, question ID, location, and question type
+	 * Created by MICHAEL BROOKS
+	 */
+	public String readFile() {
+		FilesList myFiles;
+		String x = "";		//current text being held
+		String id = "";		//id of user
+		try {
+			id = r.readLine().trim();  				//read in first line from input, representing user ID
+			id = id.substring(4,id.length()).trim();		
+		} catch (IOException e1) {
+			e1.printStackTrace();					//throw exception upon fail
+		}
+		while (!x.equals("<end>")) {				//check for EOF
+			myFiles = new FilesList(r);
+
+			try {
+				myList.add(myFiles);
+				if(x == ""){
+					x = myFiles.r.readLine().trim();		//grab next line from file
+					x = x.replaceAll("\t", "");
+				}
+				
+				//See what the button type is, based on value read above
+				if (x.trim().equals("<button>")) {	//if it's a button..
+					myList.last.question.questionType = "button";
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//Next grab the id
+					myList.last.question.id = Integer.parseInt(x.substring(4, x.length()).trim());
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//Then the question itself
+					myList.last.question.question = x.substring(3,x.length());
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//Read in the answers
+					while (x.substring(0, 2).equals("<a")) {
+						myList.last.question.answers.add(x.substring(4, x.length()));
+						x = myFiles.r.readLine().trim();
+						x = x.replaceAll("\t", "");
+					}
+					
+					x = x.substring(11, x.length()).trim();
+					String myArray[] = x.split(" ");
+					//Then read in the locations
+					for (int i = 0; i < myArray.length; i++)
+						myList.last.question.locations.add(myArray[i]);
+					x = myFiles.r.readLine().trim();	
+					
+					//finally, add the completed question to the question arraylist
+					questions.add(myList.last.question);
+					
+					// Call button class
+				} else if (x.equals("<checkbox>")) { //if checkbox...
+					// call checkbox class
+					
+					myList.last.question.questionType = "checkbox";
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//Grab question id
+					myList.last.question.id = Integer.parseInt(x.substring(4, x.length()).trim());
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//Then the question
+					myList.last.question.question = x.substring(3,x.length());
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//And then answers
+					while (x.substring(0, 2).equals("<a")) {
+						myList.last.question.answers.add(x.substring(4, x.length()));
+						x = myFiles.r.readLine().trim();
+						x = x.replaceAll("\t", "");
+					}
+
+					x = x.substring(11, x.length()).trim();
+					String myArray[] = x.split(" ");
+					
+					//Store the locations
+					for (int i = 0; i < myArray.length; i++)
+						myList.last.question.locations.add(myArray[i]);
+					x = myFiles.r.readLine().trim();	
+				
+					//Finally store the questions into the questions arraylist
+					questions.add(myList.last.question);
+					
+				} 
+				
+				else if (x.equals("<slider>")) { // if slider..
+					
+					myList.last.question.questionType = "slider";
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					//Grab the question ID
+					myList.last.question.id = Integer.parseInt(x.substring(4, x.length()).trim());
+					x = myFiles.r.readLine().trim();
+					x = x.replaceAll("\t", "");
+					
+					//Then the actual question
+					myList.last.question.question = x.substring(3,x.length());
+					x = myFiles.r.readLine().trim();
+					x = x.substring(11, x.length()).trim();
+					String myArray[] = x.split(" ");
+					
+					//Then store locations
+					for (int i = 0; i < myArray.length; i++)
+						myList.last.question.locations.add(myArray[i]);
+					x = myFiles.r.readLine().trim();
+					
+					//Finally add the question to the question array 
+					questions.add(myList.last.question);
+				}
+
+				else {
+
+				}
+				
+				//This was used in original implementation of the readFile. I left it here, but it doesn't do anything
+				//currently, can be disregarded
+				if (x == null) {
+					myList.last = myList.last.prevFile;
+					myList.last.nextFile = null;
+					myList.listCount--;
+				}
+
+			} catch (IOException e) {
+				e.printStackTrace();		//If failure above, throw an exception
+			}
+
+		}
+		// return x;
+		return id;
+	}
+	
+	/*
+	    Author: Gustavo De La Rosa
+	    radioQuestion
+	    
+	    called when the question being ased to display is of type radio
+	*/
+	private void radioQuestion(Question currentQuestion) {
+		
+		RelativeLayout.LayoutParams answerParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+        answerParams.addRule(RelativeLayout.ALIGN_LEFT);//answers are alligned left
+       
+        
+        //Question
+		TextView label=new TextView(this);
+        
+        
+        label.setText(currentQuestion.question);
+        label.setId(100);
+        
+        
+        
+        radioAnswer=new RadioButton[currentQuestion.answers.size()];//array of radio buttons one for each answer
+        
+      answer1.addView(label);//add question to the layout to be displayed (answer1)
+        //array of views, one "view" is needed per answer option. it is used to give it the coordinates on where to display it
+        RelativeLayout.LayoutParams[] views=new RelativeLayout.LayoutParams[radioAnswer.length];//one view per answer
+        
+        //this for loop assigns the paramater tothe view, creates a radio button, sets an id, and displays it. one per question option
+        for(int i=0;i<radioAnswer.length;++i){
+        	views[i]=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+        	radioAnswer[i]=new RadioButton(this);//create a new radio button
+        	radioAnswer[i].setId(i);//set the id of the option. used for layout
+        	
+        	if(i==0){
+        		
+        		views[i].addRule(RelativeLayout.BELOW, label.getId());//set the first answer below the question
+        	}else{
+        	
+        		views[i].addRule(RelativeLayout.BELOW, radioAnswer[i-1].getId());//set the answer below the previous answer
+        	}
+        	radioAnswer[i].setText(currentQuestion.answers.get(i));
+        	
+        	answer1.addView(radioAnswer[i], views[i]);//add the option to the layout (answer1)
+        	
+        }
+       
+       
+        newLayout.addView(answer1);//add Radiougroup to newLayout
+        setContentView(newLayout);//display NewLayout
+		//return answer;
+        
+        
+
+		
+	}
+  /*
+  Author: Gustavo De La Rosa
+    checkBoxQuestion
+        called when the question being asked to display is of type checkbox
+        creates the layout of a question of type checkbox. 
+  */
+
+private void checkBoxQuestion(Question currentQuestion) {
+			
+        //Question
+		TextView label=new TextView(this);
+        
+        //setup and display the question in a label
+        label.setText(currentQuestion.question);
+        RelativeLayout.LayoutParams labelParams=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+        labelParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT);
+        labelParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        
+        label.setId(100);
+        newLayout.addView(label);
+        
+        
+        boxAnswer=new CheckBox[currentQuestion.answers.size()];//array of radio buttons one for each answer
+        
+        //array of views
+        RelativeLayout.LayoutParams[] views=new RelativeLayout.LayoutParams[boxAnswer.length];//one view per answer
+        
+        
+        for(int i=0;i<boxAnswer.length;++i){
+        	views[i]=new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT,RelativeLayout.LayoutParams.WRAP_CONTENT);
+        	boxAnswer[i]=new CheckBox(this);
+        	boxAnswer[i].setId(i);
+        	
+        	boxAnswer[0].setId(400);//voodoo
+        	
+        	
+        	
+        	if(i==0){
+        		
+        		views[0].addRule(RelativeLayout.BELOW, label.getId());//set the first answer below the question
+        		
+        	}else if(i==1){
+        		views[1].addRule(RelativeLayout.BELOW, 400);//set the first answer below the question
+        	}
+        	else{
+        	
+        		views[i].addRule(RelativeLayout.BELOW, boxAnswer[i-1].getId());//set the answer below the previous answer
+        		
+        	}
+        	boxAnswer[i].setText(currentQuestion.answers.get(i));
+        	
+        	
+        	newLayout.addView(boxAnswer[i], views[i]);
+        }
+     
+        
+        setContentView(newLayout);
+	}
+
+	
+	/* writeFile
+	 * Takes a string, which is then written to a file on the phone
+	 * Created by MICHAEL BROOKS
+	 */
+    public boolean writeFile(String x){
+    	
+    	//Create flag, which indicates success or failure to write to the file
+    	boolean check = true;
+    	
+    	//FOS for writing
+    	FileOutputStream fos = null;
+    	try{
+    			//Grab file, and append to it (creates it if it doesn't exist) private so only app can view it
+				fos = openFileOutput("answers.txt", MODE_PRIVATE | MODE_APPEND);
+				//write to the file
+				fos.write(x.getBytes());		
+				fos.write(System.getProperty("line.separator").getBytes());
+				
+			} catch (IOException e) {
+				check = false;				//Set false and throw exception if failure
+				e.printStackTrace();
+			}    
+    	
+    	try {
+				fos.close();
+		    } catch (IOException e) {
+			// TODO Auto-generated catch block
+		    	e.printStackTrace();
+				check = false;
+		}		
+    	
+    	return check;
+    	
+    	
+   }
+    //created by Kevin Katsis
+    public class TimeAlarm extends BroadcastReceiver {
+    	
+    	//Written by Kevin Katsis
+    	//Never fully implemented so can be ignored
+    	//suppose to be a fancier way or setting up a scheduler
+    	
+        NotificationManager nm;
+
+        public void onReceive(Context context, Intent intent) {
+         nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+         String from = "HEY";
+         String message = "TESTING";
+         PendingIntent contentIntent = PendingIntent.getActivity(context, 0, new Intent(), 0);
+         Notification notif = new Notification(R.drawable.ic_launcher, "GOING GOOD", System.currentTimeMillis());
+         notif.setLatestEventInfo(context, from, message, contentIntent);
+         nm.notify(1, notif);
+        }
+       }
+    
+    public void createNotif(){
+ 		 // Create the notification
+		 Notification notification = new Notification(R.drawable.ic_launcher, "Survey Notification", System.currentTimeMillis());
+		 // Create an Intent for the notification to launch
+		 Intent intent = new Intent(this, HelloAndroidActivity.class);
+		 // Create a PendingIntent for the associated Intent
+		 PendingIntent pi = PendingIntent.getActivity(getApplicationContext(), 0, intent, 0);
+		 // Set the notification's details
+		 notification.setLatestEventInfo(getApplicationContext(), "Hello", "It's Time for a survey", pi);
+		 try {
+				Thread.sleep(1000*3);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		 // Submit the notification to the system
+		 ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).notify(0, notification);
+
+    }
+    
+    
+    //RadioButton myButton = new RadioButton(this);
+ //   myButton.isVisibleToUser() = true;
+}

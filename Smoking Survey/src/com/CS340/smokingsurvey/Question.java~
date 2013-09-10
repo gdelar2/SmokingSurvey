@@ -1,0 +1,24 @@
+/*
+Author: MICHAEL BROOKS, GUSTAVO DE LA ROSA
+*/
+
+
+package com.CS340.smokingsurvey;
+
+import java.util.ArrayList;
+
+public class Question {
+	String questionType;
+	String currentText;
+	String question;
+	ArrayList<String> answers = new ArrayList<String>();
+	ArrayList<String> locations = new ArrayList<String>();
+	ArrayList<String> selectedAnswers = new ArrayList<String>();
+	int id;
+	
+	public Question(){
+		questionType = null;
+		currentText = null;
+		question = null;
+	}
+}

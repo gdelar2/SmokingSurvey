@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE></TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 3.2  (Win32)">
+	<META NAME="AUTHOR" CONTENT="Michael Brooks">
+	<META NAME="CREATED" CONTENT="20121206;16103500">
+	<META NAME="CHANGEDBY" CONTENT="Michael Brooks">
+	<META NAME="CHANGED" CONTENT="20121206;21150900">
+	<STYLE TYPE="text/css">
+	<!--
+		@page { margin: 0.79in }
+		P { margin-bottom: 0.08in }
+		A:link { so-language: zxx }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<P STYLE="margin-bottom: 0in">Design.html</P>
+
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<a href=Read-me1.html>Back to README</a><BR>
+
+<img src=diagram.png>
+<img src=storyboard.png>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">When we first chose our project, we
+began having meetings a couple times a week to discuss what we wanted
+to do with the project, possible features for it, etc. Early on, the
+time we were supposed to spend developing was spent trying to figure
+out why QT kept crashing when we tried to run our program. Trips to
+the TA's office hours were made, and anytime one issue was resolved
+it seemed that another one took it's place.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">After a while of struggling with
+Necessitas we decided to ask if we could switch IDEs. After being
+given permission, we knew we had a lot of catching up to do in order
+to be done with our project by the deadline.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">Michael then got started on the app.
+The first thing to be done was to get a basic file input reader
+going. After that a button was added to toggle through different
+parts of the input file and display the new text to the screen. A
+basic undo button was made which could jump back to a previous line
+in the text file. A write was also made which would write the line
+being viewed currently to the phone.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">With these things in place, we had a
+good starting point for making our survey demo. We simply had to
+tweak the features we currently had, and add a few more advanced
+features after we had a basic survey application up and running.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">A parser was developed to read in the
+questions/answers. After this, we needed to update the questions
+being displayed to the screen.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">Eventually we decided we wanted to add
+a few more types of questions (at first we only had buttons, but we
+decided the user might want to input more than one answer in some
+cases). This required a more complex UI. Gus was put in charge of
+this.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">Each question type was dynamically
+created on the fly depending on which type of question the user was
+supposed to be seeing. An arraylist was created which stored all the
+questions before the program ran, which is different than in the
+original implementation where we read the file line by line as we
+needed it. We decided this was a good way to proceed with this
+because we also knew we were going to have non-linear question
+progression.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">The UI was in progress of being
+developed, but that didn't mean we could just halt development on the
+rest of the project until it was finished. We began brainstorming on
+a way we could do the non-linear questions. After coming up with a 
+way to do it, we then got to work doing it.</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">We had to add a &lt;locations&gt; tag
+to the input file, which would display the location each answer
+should jump to if the user selects that as their answer. If that is
+to be the end of the branch of questions, a -1 should be put for that
+answer, and our program knows to ignore it and move on to the next
+questions (or display the end screen if there are no questions left
+to display) A few problems were encountered during this phase, and
+eventually we were able to work out the bugs involving it. 
+</P>
+<P STYLE="margin-bottom: 0in"><BR>
+</P>
+<P STYLE="margin-bottom: 0in">Kevin then got to work on random
+prompts. He eventually discovered a way to send a notification to the
+user when a button is selected. After that, he was able to tweak it
+to be able to send a notification after a few seconds of selecting
+the button. By finding random times to display the notification, we
+would be able to add random prompts as a feature to our program.</P>
+</BODY>
+</HTML>

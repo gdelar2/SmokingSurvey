@@ -1,0 +1,38 @@
+package com.CS340.smokingsurvey;
+
+
+public class LinkedList {
+	public FilesList first;
+	public FilesList last;
+	public int listCount;	//total list count
+	
+	// LinkedList constructor
+	public LinkedList()
+	{
+		// this is an empty list, so the reference to the head node
+		// is set to a new node with no data
+		first = null;
+		last = null;
+		listCount = 0;
+	}
+	
+	public void add(FilesList p)
+	// post: appends the specified element to the end of this list.
+	{
+//		Link myLink = new Link(p);
+		
+		if(first == null){
+			first = p;
+			p.prevFile = p.nextFile = null;
+		}
+		else{
+			last.nextFile = p;				//.next is rightNeighbor
+												//.prev is leftNeighbor
+			p.prevFile = last;
+			p.nextFile = null;
+					
+		}
+		last = p;		
+		listCount++;// increment the number of elements variable
+	}
+}
